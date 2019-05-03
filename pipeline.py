@@ -49,7 +49,7 @@ simple_hardnessmap = True
 # From this point it's assumed that merged observation has been reduced with square_fov
 #!! Check that broad_thresh_square_sps.fits exists in merged observation directory 
 adaptivebin = True
-contourbin = True; sn_per_region = 70; reg_smoothness = 100
+contourbin = True; sn_per_region = 142; reg_smoothness = 100
 minx = 3069; miny = 3175
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
 # sn approx sqrt number of counts: 40k = 200, 20k = 141.42, 10k = 100, 5k = 70.71
@@ -94,11 +94,13 @@ def main():
     #run ./spexfitting.sh
     #run ./xspecfitting.sh
     
-    ParseOutput(resultsdir)
+    ParseOutput('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/')#resultsdir
 #    MakeMaps('./regions-info-spex.data',binmap)
-    MakeMaps('./regions-info-xspec.data',binmap)
+#    MakeBasicMaps('./regions-info-xspec.data',binmap)
+#    MixedMaps('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_errordepthmap.fits')
     CleanUp(mapsdir)
-
+    
+#    TrendMaps('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_map.fits')
 
 
 
@@ -249,8 +251,13 @@ def FindData(input):
 obsids, obsids_padded, obsids_fullstr = FindData(cluster)
 
 #######################
-obsids = obsids[1:]
-obsids_padded = obsids_padded[1:]
+obsids = obsids[3:]
+obsids_padded = obsids_padded[3:]
+#######################
+###--- OPTIONAL --->
+obsids = ['2419','16129','16514','16515','16516']
+obsids_padded = ['02419','16129','16514','16515','16516']
+obsid_fullstr = '02419 16129 16514 16515 16516'
 #######################
 
 #%%
@@ -385,9 +392,9 @@ def Processing(inputdir):
             file.write('specextract ' + infile + outroot + bkgfile + bkgresp + weight_rmf + binspec + 'verbose=1 clobber=yes\n\n')
 
             file.write('grppha xaf_' + obsids[jj] + '_' + str(ii) + '.pi xaf_' + obsids[jj] + '_' + str(ii) + '.grp "chkey RESPFILE xaf_' + obsids[jj] + '_' + str(ii) + '.rmf & chkey ANCRFILE xaf_' + obsids[jj] + '_' + str(ii) + '.arf & chkey BACKFILE xaf_' + obsids[jj] + '_' + str(ii) + '_bkg.pi & group min 1 & exit"\n\n')#chkey backfile ' + backfile + ' exit"\n\n')
-            file.write("echo 'Converting files into SPEX format using trafo.sh'\n\n")
 #            file.write("echo 'STOP HERE TO MAKE SURE TRAFO IS CONFIGURED PROPERLY'\n\n\n\n")
             if SPEX:
+                file.write("echo 'Converting files into SPEX format using trafo.sh'\n\n")
                 file.write('if [ -e xaf_' + obsids[jj] + '_' + str(ii) + '.grp ]; then\ntrafo << EOF\n1\n1\n10000\n1\nxaf_' + obsids[jj] + '_' + str(ii) + '.grp\ny\ny\n0\nxaf_' + obsids[jj] + '_' + str(ii) + '\nxaf_' + obsids[jj] + '_' + str(ii) + '\nEOF\nfi\n')
             
             file.write('tar -cf xaf_' + obsids[jj] + '_' + str(ii) + '.tar *' + obsids[jj] + '_' + str(ii) + '*\n')
@@ -466,15 +473,15 @@ def Processing(inputdir):
     
     file2 = open('xspecfitting.sh', 'w')
     file2.write('mkdir ' + resultsdir + '/xspec\n')
-    file2.write('cp xspecfitting.sh ' + specfile_outputdir + '\n')
+#    file2.write('cp xspecfitting.sh ' + specfile_outputdir + '\n')
     for ii in list(range(sexnum)):#len(obsids)
         file3 = open(specfile_outputdir + '/reg_' + str(ii) + '_xspec_fit.script','w')
 #        file3.write('xspec << EOF\n')
-        file3.write('setplot energy\ncpd ' + resultsdir + '/xspec/reg_' + str(ii) + '_xspec_fit.ps/cps\n\n')
+        file3.write('statistic cstat\nsetplot energy\ncpd ' + resultsdir + '/xspec/reg_' + str(ii) + '_xspec_fit.ps/cps\n\n')
         for jj in list(range(len(obsids))): #regnum
             file3.write('data ' + str(jj+1) + ':' + str(jj+1) + ' ' + specfile_outputdir + '/xaf_' + obsids[jj] + '_' + str(ii) + '.grp\n/*\n')
             file3.write('ig ' + str(jj+1) + ':' + str(jj+1) + ' bad\nig ' + str(jj+1) + ':' + str(jj+1) + ' **-0.5 7.5-**\n')
-        file3.write('\nmo phabs(apec)\n/*\nnewpar 1 0.041 -1\nnewpar 2 5.\nnewpar 3 0.3\nnewpar 4 0.058100 -1\nthaw 3\nquery yes\nfit\nsetplot back\nfit\npl ld res\n\n')
+        file3.write('\nmo phabs(apec)\n/*\nnewpar 1 0.041 -1\nnewpar 2 5.\nnewpar 3 0.3\nnewpar 4 0.058100 -1\nquery yes\nfit\nsetplot back\nfit\npl ld res\n\n')
         file3.write('set fileall [open ' + resultsdir + '/xspec/reg_' + str(ii) + '_data.xcm w 0600]\n')
         file3.write('tclout param 1\nscan $xspec_tclout "%f" nh\ntclout param 2\nscan $xspec_tclout "%f" temp\nerror 1. 2\ntclout error 2\nscan $xspec_tclout "%f %f" temp_low temp_high\ntclout param 3\nscan $xspec_tclout "%f" abundance\nerror 1. 3\ntclout error 3\nscan $xspec_tclout "%f %f" abundance_low abundance_high\ntclout param 4\nscan $xspec_tclout "%f" redshift\ntclout param 5\nscan $xspec_tclout "%f" norm1\nerror 1. 5\ntclout error 5\nscan $xspec_tclout "%f %f" norm1_low norm1_high\ntclout stat\nscan $xspec_tclout "%f" chi\ntclout dof\nscan $xspec_tclout "%f" dof\n')
         file3.write('puts $fileall "$nh $temp $temp_low $temp_high $abundance $abundance_low $abundance_high $redshift $norm1 $norm1_low $norm1_high $chi $dof"\nclose $fileall\n\n')
@@ -574,7 +581,10 @@ def ParseOutput(inputdir):
             
             chi = str(info[11])
             dof = str(info[12])
-            chi2 = str(round(float(chi)/float(dof),5))
+            try:
+                chi2 = str(round(float(chi)/float(dof),5))
+            except:
+                pass
     
             file.write(str(ii) + ' ' + nh + ' ' + temp + ' ' + templow + ' ' + temphigh + ' ' + tempelow + ' ' + tempehigh + ' ' + temperange + ' ' + abund + ' ' + abundlow + ' ' + abundhigh + ' ' + abundelow + ' ' + abundehigh + ' ' + abunderange + ' ' + redshift + ' ' + norm + ' ' + normlow + ' ' + normhigh + ' ' + normelow + ' ' + normehigh + ' ' + normerange + ' ' + chi + ' ' + dof + ' ' + chi2 + '\n')# + ' ' + press + ' ' + presselow + ' ' + pressehigh + ' ' + presslow + ' ' + presshigh + ' ' + presserange + ' ' + entropy + ' ' + entroelow + ' ' + entroehigh + ' ' + entrolow + ' ' + entrohigh + ' ' + entroerange + '\n')
         file.close()
@@ -626,375 +636,29 @@ def _filter_txt_lines_to(fname_in, substr, fname_out):
 	joined_lines = '\n'.join(filtered_lines)
 	open(fname_out, 'w').write(joined_lines)# + '\n'
     
-#%%
-def MakeMaps(inputdata,binmap):
-    if SPEX:
-        #REGION DATA
-        #da = pd.read_csv(inputdata)
-        #header = list(da.columns)[0].split()
-        data = pd.read_csv(inputdata, delimiter=' ', index_col=0)
-        #datt = pd.read_csv(inputdata, delimiter=' ', index_col=0).transpose()
-        region=[];
-        norm=[];norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
-        temp=[];temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
-        #press=[];press_low=[];press_high=[];press_error_low=[];press_error_high=[];press_error_diff=[]
-        #entro=[];entro_low=[];entro_high=[];entro_error_low=[];entro_error_high=[];entro_error_diff=[]
-        for index,row in data.iterrows():
-            region.append(index)
-            norm.append(round(row['norm'],4))
-            norm_low.append(round(row['norm_low'],4))
-            norm_high.append(round(row['norm_high'],4))
-            norm_error_low.append(round(row['norm_error_low'],4))
-            norm_error_high.append(round(row['norm_error_high'],4))
-            norm_error_diff.append(round(row['norm_error_diff'],4))
-            temp.append(round(row['temperature'],4))
-            temp_low.append(round(row['temp_low'],4))
-            temp_high.append(round(row['temp_high'],4))
-            temp_error_low.append(round(row['temp_error_low'],4))
-            temp_error_high.append(round(row['temp_error_high'],4))
-            temp_error_diff.append(round(row['temp_error_diff'],4))
-            
-    if XSPEC:
-        data = pd.read_csv(inputdata, delimiter=' ', index_col=0)
-        mapdata = data[0:168]
-        region = [];nh = [];temp=[];temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
-        abund=[];abund_low=[];abund_high=[];abund_error_low=[];abund_error_high=[];abund_error_diff=[];redshift=[]
-        norm=[];norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
-        chi=[];dof=[];chi2=[]
-        for index,row in mapdata.iterrows():
-            region.append(index)
-            nh.append(round(row['nH'],4))
-            temp.append(round(row['temperature'],4))
-            temp_low.append(round(row['temp_low'],4))
-            temp_high.append(round(row['temp_high'],4))
-            temp_error_low.append(round(row['temp_error_low'],4))
-            temp_error_high.append(round(row['temp_error_high'],4))
-            temp_error_diff.append(round(row['temp_error_diff'],4))
-            abund.append(round(row['abundance'],4))
-            abund_low.append(round(row['abund_low'],4))
-            abund_high.append(round(row['abund_high'],4))
-            abund_error_low.append(round(row['abund_error_low'],4))
-            abund_error_high.append(round(row['abund_error_high'],4))
-            abund_error_diff.append(round(row['abund_error_diff'],4))
-            redshift.append(round(row['redshift'],4))
-            norm.append(round(row['norm'],4))
-            norm_low.append(round(row['norm_low'],4))
-            norm_high.append(round(row['norm_high'],4))
-            norm_error_low.append(round(row['norm_error_low'],4))
-            norm_error_high.append(round(row['norm_error_high'],4))
-            norm_error_diff.append(round(row['norm_error_diff'],4))
-            chi.append(round(row['chi'],4))
-            dof.append(round(row['dof'],4))
-            chi2.append(round(row['chi2'],4))
-            
-            
-    cfdata = data[168:len(data)]
-    cftemp = [];cfabund = [];cfnorm = [];cfchi2 = []
-    for index,row in cfdata.iterrows():
-        cftemp.append(round(row['temperature'],4))
-        cfabund.append(round(row['abundance'],4))
-        cfnorm.append(round(row['norm'],4))
-        cfchi2.append(round(row['chi2'],4))
-        
-    #Regions are all mixed up, had to fix manually
-    longtemp = [cftemp[4],cftemp[3],cftemp[2],cftemp[1],cftemp[0],cftemp[5],cftemp[6],cftemp[7]]
-    longabund = [cfabund[4],cfabund[3],cfabund[2],cfabund[1],cfabund[0],cfabund[5],cfabund[6],cfabund[7]]
-    longnorm = [cfnorm[4],cfnorm[3],cfnorm[2],cfnorm[1],cfnorm[0],cfnorm[5],cfnorm[6],cfnorm[7]]
-    longchi2 = [cfchi2[4],cfchi2[3],cfchi2[2],cfchi2[1],cfchi2[0],cfchi2[5],cfchi2[6],cfchi2[7]]
-    shlefttemp = [cftemp[9],cftemp[11],cftemp[12],cftemp[13],cftemp[14],cftemp[15],cftemp[16],cftemp[17],cftemp[8],cftemp[25],cftemp[26]]
-    shleftabund = [cfabund[9],cfabund[11],cfabund[12],cfabund[13],cfabund[14],cfabund[15],cfabund[16],cfabund[17],cfabund[8],cfabund[25],cfabund[26]]
-    shleftnorm = [cfnorm[9],cfnorm[11],cfnorm[12],cfnorm[13],cfnorm[14],cfnorm[15],cfnorm[16],cfnorm[17],cfnorm[8],cfnorm[25],cfnorm[26]]
-    shleftchi2 = [cfchi2[9],cfchi2[11],cfchi2[12],cfchi2[13],cfchi2[14],cfchi2[15],cfchi2[16],cfchi2[17],cfchi2[8],cfchi2[25],cfchi2[26]]
-    shrighttemp = [cftemp[10],cftemp[18],cftemp[19],cftemp[20],cftemp[21],cftemp[22],cftemp[23],cftemp[24],cftemp[27],cftemp[28],cftemp[29]]
-    shrightabund = [cfabund[10],cfabund[18],cfabund[19],cfabund[20],cfabund[21],cfabund[22],cfabund[23],cfabund[24],cfabund[27],cfabund[28],cfabund[29]]
-    shrightnorm = [cfnorm[10],cfnorm[18],cfnorm[19],cfnorm[20],cfnorm[21],cfnorm[22],cfnorm[23],cfnorm[24],cfnorm[27],cfnorm[28],cfnorm[29]]
-    shrightchi2 = [cfchi2[10],cfchi2[18],cfchi2[19],cfchi2[20],cfchi2[21],cfchi2[22],cfchi2[23],cfchi2[24],cfchi2[27],cfchi2[28],cfchi2[29]]
 
-    f, axarr = plt.subplots(2,2)
-    f.suptitle('Long Regions')
-    axarr[0, 0].plot(list(range(len(longtemp))), longtemp)
-    axarr[0, 0].set_title('Temperature')
-    axarr[0, 1].scatter(list(range(len(longtemp))), longabund)
-    axarr[0, 1].set_title('Abundance')
-    axarr[1, 0].plot(list(range(len(longtemp))), longnorm)
-    axarr[1, 0].set_title('Norm')
-    axarr[1, 1].scatter(list(range(len(longtemp))), longchi2)
-    axarr[1, 1].set_title('$\chi^2$')
-    f.savefig('longregions.png', bbox_inches='tight')
-    
-    f, axarr = plt.subplots(2,2)
-    f.suptitle('Short Left Regions')
-    axarr[0, 0].plot(list(range(len(shlefttemp))), shlefttemp)
-    axarr[0, 0].set_title('Temperature')
-    axarr[0, 1].scatter(list(range(len(shlefttemp))), shleftabund)
-    axarr[0, 1].set_title('Abundance')
-    axarr[1, 0].plot(list(range(len(shlefttemp))), shleftnorm)
-    axarr[1, 0].set_title('Norm')
-    axarr[1, 1].scatter(list(range(len(shlefttemp))), shleftchi2)
-    axarr[1, 1].set_title('$\chi^2$')
-    f.savefig('shortleftregions.png', bbox_inches='tight')
-    
-    f, axarr = plt.subplots(2,2)
-    f.suptitle('Short Right Regions')
-    axarr[0, 0].plot(list(range(len(shrighttemp))), shrighttemp)
-    axarr[0, 0].set_title('Temperature')
-    axarr[0, 1].scatter(list(range(len(shrighttemp))), shrightabund)
-    axarr[0, 1].set_title('Abundance')
-    axarr[1, 0].plot(list(range(len(shrighttemp))), shrightnorm)
-    axarr[1, 0].set_title('Norm')
-    axarr[1, 1].scatter(list(range(len(shrighttemp))), shrightchi2)
-    axarr[1, 1].set_title('$\chi^2$')
-    f.savefig('shortrightregions.png', bbox_inches='tight')
-        
-        
-    
-    #IMAGE DATA
-    im = fits.open(binmap)
-    hdr = im[0].header
-    imdata = im[0].data
-    #we = wcs.WCS(hdr)
-    
-    def _mkmap(input,output,head):
-        #hdu = fits.PrimaryHDU(input)
-        fits.writeto(output,input,head,overwrite=True)
-    
-    
-    def _printmap2(input,output):
-        f = plt.figure()
-        plt.subplot(111, projection=wcs)
-        plt.imshow(input, origin='lower', cmap=plt.cm.viridis)
-        ax = plt.subplot(projection=wcs)
-        ax.imshow(input, origin='lower', cmap=plt.cm.viridis)
-        ax.coords.grid(True, color='white', ls='solid')
-        ax.coords[0].set_axislabel('Galactic Longitude')
-        ax.coords[1].set_axislabel('Galactic Latitude')
-        overlay = ax.get_coords_overlay('fk5')
-        overlay.grid(color='white', ls='dotted')
-        overlay[0].set_axislabel('Right Ascension (J2000)')
-        overlay[1].set_axislabel('Declination (J2000)')
-        f.savefig(output, bbox_inches='tight')
-    
-    ## NORM MAPS
-    boolmask = [];region_pixsum = []
-    for ii in region:
-        imreg = imdata == ii
-        region_pixsum.append(np.count_nonzero(imreg.astype(np.int)))
-        boolmask.append(((imreg.astype(np.int))*norm[ii]/region_pixsum[ii]))
-    
-    normmap = sum(boolmask)
-    _mkmap(normmap,"norm_map.fits",hdr)
-    #_printmap(normmap,"norm_map.pdf")
-    
-    boolmask = [];region_pixsum = []
-    for ii in region:
-        imreg = imdata == ii
-        region_pixsum.append(np.count_nonzero(imreg.astype(np.int)))
-        boolmask.append(((imreg.astype(np.int))*norm_error_diff[ii]/region_pixsum[ii]))
-    
-    normerrordepthmap = sum(boolmask)
-    _mkmap(normerrordepthmap,"norm_errordepthmap.fits",hdr)
-    #_printmap(normerrordepthmap,"norm_errordepthmap.pdf")
-    
-    
-    ## TEMP MAPS
-    boolmask = []
-    for ii in region:
-        imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*temp[ii])
-    
-    tempmap = sum(boolmask)
-    #tempmap[tempmap >= 18] = np.nan
-    _mkmap(tempmap,"temp_map.fits",hdr)
-    #_printmap(tempmap,"temp_map.pdf")
-    
-    boolmask = []
-    for ii in region:
-        imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*temp_error_diff[ii])
-    
-    temperrordepthmap = sum(boolmask)
-    _mkmap((temperrordepthmap/2),"temp_error_map.fits",hdr)
-    #_printmap(temperrordepthmap,"temp_errordepthmap.pdf")
-    
-    
-    ## ABUND MAPS
-    boolmask = []
-    for ii in region:
-        imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*abund[ii])
-    
-    abundmap = sum(boolmask)
-    #tempmap[tempmap >= 18] = np.nan
-    _mkmap(abundmap,"abund_map.fits",hdr)
-    #_printmap(tempmap,"temp_map.pdf")
-    
-    boolmask = []
-    for ii in region:
-        imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*abund_error_diff[ii])
-    
-    abunderrordepthmap = sum(boolmask)
-    _mkmap((abunderrordepthmap/2),"abund_error_map.fits",hdr)
-    #_printmap(temperrordepthmap,"temp_errordepthmap.pdf")
     
     
     
-    ##ENTROPY/PRESSURE MAPS
-    entropymap = tempmap/(normmap**(2/3))
-    entroerrordepthmap = (temperrordepthmap/2)/((normerrordepthmap/2)**(2/3))
-    pressuremap = normmap*tempmap
-    presserrordepthmap = (normerrordepthmap/2)*(temperrordepthmap/2)
     
-    _mkmap(entropymap,"entropy_map.fits",hdr)
-    _mkmap(pressuremap,"pressure_map.fits",hdr)
-    _mkmap(entroerrordepthmap,"entropy_errordepthmap.fits",hdr)
-    _mkmap(presserrordepthmap,"pressure_errordepthmap.fits",hdr)
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 #%%
 def CleanUp(output):
     subprocess.run('mkdir ' + output, shell=True)
-    subprocess.run('cp *.fits *.data *.png ' + output, shell=True)
+#    subprocess.run('cp *.fits *.data *.png ' + output, shell=True)
+    subprocess.run('cp regions-info-xspec.data regions-info-xspec-sn' + str(sn_per_region) + '.data', shell=True)
+    subprocess.run('cp regions-info-xspec-sn' + str(sn_per_region) + '.data ' + output, shell=True)
     
-    
-    
-##%%
-#    
-## Original inpainting code by Davide Lasagna https://github.com/gasagna/openpiv-python/blob/master/openpiv/src/lib.pyx
-## Cython removed and Gaussian kernel code added by opit (http://technarium.lt)
-## Note that the Gaussian kernel has a default standard deviation equal to 3 and is normalised to sum up to 1 to preserve flux, which means that for larger standard deviation you'd have to increase the kernel size to avoid artifacts.
-## Matplotlib used for testing only.
-#
-#
-##from inpaint import *
-##import matplotlib.pyplot as plt
-#
-#
-#def inpaint_array(inputArray, mask):
-#	maskedImg = np.ma.array(inputArray, mask = mask)
-#	NANMask =  maskedImg.filled(np.NaN)
-#	badArrays, num_badArrays = ndimage.label(mask)
-#	data_slices = ndimage.find_objects(badArrays)
-#	filled = replace_nans(NANMask, max_iter=20, tol=0.05, kernel_radius=5, kernel_sigma=2, method='idw')
-#	return filled
-#
-#
-## Original inpainting code (replace_nans) by Davide Lasagna https://github.com/gasagna/openpiv-python/blob/master/openpiv/src/lib.pyx
-## Cython removed and Gaussian kernel code added by opit (https://github.com/astrolitterbox)
-## Note that the Gaussian kernel has a default standard deviation equal to 3 and is normalised to sum up to 1 to preserve flux, which means that for larger standard deviation you'd have to increase the kernel size to avoid artifacts.
-#
-#
-#def makeGaussian(sizex, sizey, sigma):
-#	x, y = np.mgrid[0:sizex:1, 0:sizey:1]
-#	pos = np.empty(x.shape + (2,))
-#	pos[:, :, 0] = x; pos[:, :, 1] = y
-#	rv = multivariate_normal(mean=[sizex/2,sizey/2], cov=[[sigma,0],[0,sigma]])
-#	return rv.pdf(pos)/np.sum(rv.pdf(pos))
-#
-#def replace_nans(array, max_iter=50, tol=0.05, kernel_radius=2, kernel_sigma=2, method='idw'):
-#	"""Replace NaN elements in an array using an iterative image inpainting algorithm.
-#	The algorithm is the following:
-#	1) For each element in the input array, replace it by a weighted average
-#	of the neighbouring elements which are not NaN themselves. The weights depends
-#	of the method type. If ``method=localmean`` weight are equal to 1/( (2*kernel_size+1)**2 -1 )
-#	2) Several iterations are needed if there are adjacent NaN elements.
-#	If this is the case, information is "spread" from the edges of the missing
-#	regions iteratively, until the variation is below a certain threshold.
-#	Parameters
-#	----------
-#	array : 2d np.ndarray
-#	an array containing NaN elements that have to be replaced
-#	max_iter : int
-#	the number of iterations
-#	kernel_size : int
-#	the size of the kernel, default is 1
-#	method : str
-#	the method used to replace invalid values. Valid options are
-#	`localmean`, 'idw'.
-#	Returns
-#	-------
-#	filled : 2d np.ndarray
-#	a copy of the input array, where NaN elements have been replaced.
-#	"""
-#	kernel_size = kernel_radius*2+1
-#	filled = np.empty( [array.shape[0], array.shape[1]])
-#	kernel = np.empty( (2*kernel_size+1, 2*kernel_size+1))
-#	
-#	# indices where array is NaN
-#	inans, jnans = np.nonzero( np.isnan(array) )
-#	
-#	# number of NaN elements
-#	n_nans = len(inans)
-#	
-#	# arrays which contain replaced values to check for convergence
-#	replaced_new = np.zeros( n_nans)
-#	replaced_old = np.zeros( n_nans)
-#	
-#	# depending on kernel type, fill kernel array
-#	if method == 'localmean':
-#	  
-#		print('kernel_size', kernel_size)
-#		for i in range(kernel_size):
-#			for j in range(kernel_size):
-#				kernel[i,j] = 1
-##		print(kernel, 'kernel')
-#
-#	elif method == 'idw':
-#		kernel = makeGaussian(kernel_size,kernel_size,kernel_sigma)
-##		print(kernel.shape, 'kernel')
-#	else:
-#		raise ValueError( 'method not valid.')
-#	
-#	# fill new array with input elements
-#	for i in range(array.shape[0]):
-#		for j in range(array.shape[1]):
-#			filled[i,j] = array[i,j]
-#
-#	# make several passes
-#	# until we reach convergence
-#	for it in range(max_iter):
-#		# for each NaN element
-#		for k in range(n_nans):
-#			i = inans[k]
-#			j = jnans[k]
-#			
-#			# initialize to zero
-#			filled[i,j] = 0.0
-#			n = 0
-#			
-#			# loop over the kernel
-#			for I in range(kernel_size):
-#				for J in range(kernel_size):
-#				   
-#					# if we are not out of the boundaries
-#					if i+I-kernel_radius < array.shape[0] and i+I-kernel_radius >= 0:
-#						if j+J-kernel_radius < array.shape[1] and j+J-kernel_radius >= 0:
-#												
-#							# if the neighbour element is not NaN itself.
-#							if filled[i+I-kernel_radius, j+J-kernel_radius] == filled[i+I-kernel_radius, j+J-kernel_radius] :
-#								
-#								# do not sum itself
-#								if I-kernel_radius != 0 and J-kernel_radius != 0:
-#									
-#									# convolve kernel with original array
-#									filled[i,j] = filled[i,j] + filled[i+I-kernel_radius, j+J-kernel_radius]*kernel[I, J]
-#									n = n + 1*kernel[I,J]
-#
-#			# divide value by effective number of added elements
-#			if n != 0:
-#				filled[i,j] = filled[i,j] / n
-#				replaced_new[k] = filled[i,j]
-#			else:
-#				filled[i,j] = np.nan
-#				
-#		# check if mean square difference between values of replaced
-#		#elements is below a certain tolerance
-##		print('tolerance', np.mean( (replaced_new-replaced_old)**2 ))
-#		if np.mean( (replaced_new-replaced_old)**2 ) < tol:
-#			break
-#		else:
-#			for l in range(n_nans):
-#				replaced_old[l] = replaced_new[l]
-#	return filled
+
 #%%
 if __name__ == '__main__':
     main()
