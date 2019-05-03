@@ -15,6 +15,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 
+import scipy.ndimage as ndimage
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
@@ -29,13 +30,14 @@ from astropy import wcs
 
 #%%PRG2190423AL8434202
 
-tempmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_map.fits'
-temperror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_range_map.fits'
+
+#temperror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_range_map.fits'
 densmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/density_map.fits'
 denserror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/density_errordepthmap.fits'
 #presmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/better_pressure_map.fits'
 #radtempmap = '/home/jpbreuer/Scripts/chandra_pipeline/radial_temp.fits'
 #entropmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/better_entropy_map.fits'
+tempmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_map.fits'
 temperrorhighmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_high_map.fits'
 temperrorlowmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_low_map.fits'
 
@@ -62,7 +64,8 @@ def main():
 #    ModelDividedMaps(data,model) #resid_div_data.fits
 #    RadialAverage(movex,movey,presmap,'pressure')
 #    RadialAverage(movex,movey,entropmap,'entropy')
-    RadialCompass(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
+#    RadialCompass(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
+    RadialCone(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
     
 #    ColdFrontPlot('/home/jpbreuer/Scripts/chandra_pipeline/regions-info-xspec-sn70.data')
 #    ShockFrontPlot('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/xspec/regions-info-xspec.data')
@@ -953,7 +956,235 @@ def RadialCompass(centerx,centery,data,erbarup,erbardown,pixelsizekpc,outputlabe
     subprocess.run('mv compass_' + outputlabel + '_image.fits NSEW_' + outputlabel + '.png NSEW_cross_' + outputlabel + '.png plots', shell=True)
 
 
+#%%
+#def idx_front(ln):
+#    try:
+#        return list(ln).index(1)
+#    except ValueError:
+#        return len(ln) # an index beyond line end
+#
+#def idx_back(ln):
+#    try:
+#        return len(ln) - list(reversed(ln)).index(1) - 1
+#    except ValueError:
+#        return len(ln) # an index beyond line end
 
+def RadialCone(centerx,centery,data,erbarup,erbardown,pixelsizekpc,outputlabel):
+#centerx = 725;centery = 759
+
+    tempdat = fits.open(data) #tempmap
+    temphead = tempdat[0].header
+    #tempdata = np.flipud(tempdat[0].data)
+    tempdata = tempdat[0].data
+    
+    tempelowdat = fits.open(erbardown)
+    tempelowdata = tempelowdat[0].data
+    
+    tempehighdat = fits.open(erbarup)
+    tempehighdata = tempehighdat[0].data
+    
+    y,x = np.shape(tempdata)
+    
+    testgrid = np.reshape(range(x*y),(x,y))
+    magicnum = testgrid[centerx,centery]
+    lrtest = np.fliplr(testgrid)
+    flx,fly = np.where(lrtest==magicnum)
+    
+    #movex = int(flx)
+    #movey = int(fly)
+    movex = centerx
+    movey = centery
+    
+    xpositions = np.zeros([y, x]).astype(int)
+    ypositions = np.zeros([y, x]).astype(int)
+    xarray = np.array(range(-movex,x-movex)).astype(int)
+    yarray = np.array(range(-movey,y-movey)).astype(int)
+    for ii in np.arange(y):
+        xpositions[ii,:] = np.c_[xarray[None,:]]
+    for ii in np.arange(x):
+        ypositions[:,ii] = np.r_[yarray[None,:]]
+    #ypositions = np.flip(ypositions)
+    
+    
+    
+    #NORTH 
+    northgrid = np.zeros([y, x]).astype(int)
+    for ii in list(range(0,np.abs(np.amin(ypositions))+1)):
+        northgrid[ii,movex] = 1
+    #SOUTH 
+    southgrid = np.zeros([y, x]).astype(int)
+    for ii in list(range(np.abs(np.amin(ypositions)),y)):
+        southgrid[ii,movex] = 1
+    #EAST (IMG LEFT)
+    eastgrid = np.zeros([y, x]).astype(int)
+    for ii in list(range(0,np.abs(np.amin(xpositions))+1)):
+        eastgrid[movey,ii] = 1
+    #WEST (IMG RIGHT)
+    westgrid = np.zeros([y, x]).astype(int)
+    for ii in list(range(np.abs(np.amin(xpositions)),x)):
+        westgrid[movey,ii] = 1
+    
+    #NORTHEAST (IMG TOP LEFT)
+    negrid = np.zeros([y, x]).astype(int)
+    nequad = np.zeros([y, x]).astype(int)
+    
+    nediag = np.eye(y,M=x,k=movex-movey)
+    
+    for ii in list(range(np.amin(ypositions),1)):
+        for jj in list(range(np.amin(xpositions),1)):
+            nequad[movey+ii,movex+jj] = 1
+    
+    negrid = np.multiply(nequad,nediag)
+    
+    #SOUTHWEST (IMG BOTTOM RIGHT)
+    swgrid = np.zeros([y, x]).astype(int)
+    swquad = np.zeros([y, x]).astype(int)
+    
+    #swdiag = np.eye(y,M=x,k=movex-movey)
+    
+    for ii in list(range(0,np.amax(ypositions)+1)):
+        for jj in list(range(0,np.amax(xpositions)+1)):
+            swquad[movey+ii,movex+jj] = 1
+    
+    swgrid = np.multiply(swquad,nediag)
+    
+    #NORTHWEST (IMG TOP RIGHT)
+    #testgrid = np.reshape(range(x*y),(x,y))
+    #magicnum = testgrid[movex,movey]
+    #lrtest = np.fliplr(testgrid)
+    #flx,fly = np.where(lrtest==magicnum)
+    
+    nwgrid = np.zeros([y, x]).astype(int)
+    nwquad = np.zeros([y, x]).astype(int)
+    
+    nwdiag = np.eye(y,M=x,k=int(flx)-int(fly))[::-1]
+    
+    for ii in list(range(np.amin(ypositions),1)):
+        for jj in list(range(np.amin(xpositions),1)):
+            nwquad[movey+ii,movex-jj] = 1
+    
+    nwgrid = np.multiply(nwquad,nwdiag)
+    
+    #SOUTHEAST (IMG BOTTOM LEFT)
+    segrid = np.zeros([y, x]).astype(int)
+    sequad = np.zeros([y, x]).astype(int)
+    
+    for ii in list(range(0,np.amax(ypositions)+1)):
+        for jj in list(range(np.amin(xpositions),1)):
+            sequad[movey+ii,movex+jj] = 1
+    
+    segrid = np.multiply(sequad,nwdiag)
+    
+    
+    necone = negrid+northgrid
+    nwcone = nwgrid+northgrid
+
+#    ranges = [ (idx_front(ln), idx_back(ln)) for ln in necone ]
+#    for ln, (lo,hi) in zip(necone, ranges):
+#        ln[lo:hi] = 1  # attention: destructive update in-place
+    structure = np.zeros((3,3), dtype=np.int)
+    structure[1,:] = 1
+
+    filledne = ndimage.morphology.binary_fill_holes(necone, structure)
+    fillednw = ndimage.morphology.binary_fill_holes(nwcone, structure)
+    
+#    fullcompass = northgrid+southgrid+westgrid+eastgrid+negrid+nwgrid+segrid+swgrid
+#    compassimage = tempdata*np.invert(fullcompass.astype(np.bool)).astype(np.int)
+#    _mkmap(compassimage,"compass_" + outputlabel + "_image.fits",temphead)
+    _mkmap(filledne.astype(np.int),"necone_" + outputlabel + ".fits",temphead)
+    _mkmap(fillednw.astype(np.int),"nwcone_" + outputlabel + ".fits",temphead)
+    
+    
+#    northelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,northgrid))]
+#    northehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,northgrid))]
+#    northyerr = [northelow, northehigh]
+#    southelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,southgrid))]
+#    southehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,southgrid))]
+#    southyerr = [southelow, southehigh]
+#    eastelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,eastgrid))]
+#    eastehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,eastgrid))]
+#    eastyerr = [eastelow, eastehigh]
+#    westelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,westgrid))]
+#    westehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,westgrid))]
+#    westyerr = [westelow, westehigh]
+#    neelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,negrid))]
+#    neehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,negrid))]
+#    neyerr = [neelow, neehigh]
+#    nwelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,nwgrid))]
+#    nwehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,nwgrid))]
+#    nwyerr = [nwelow, nwehigh]
+#    seelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,segrid))]
+#    seehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,segrid))]
+#    seyerr = [seelow, seehigh]
+#    swelow = tempelowdata[np.nonzero(np.multiply(tempelowdata,swgrid))]
+#    swehigh = tempehighdata[np.nonzero(np.multiply(tempehighdata,swgrid))]
+#    swyerr = [swelow, swehigh]
+#    
+#    #for item in list(range(len(northunique))):
+#    #    counter=1
+#    #    for element in list(range(len(northarray))):
+#    #        if northarray[element] == northunique[item]:
+#    #            counter = counter+1
+#    #northuniquedist = [ii/0.6215 for ii in northuniqueindex]
+#    #northxbar = [ii/2 for ii in northuniquedist]
+#    
+#    northarray = tempdata[np.nonzero(np.multiply(tempdata,northgrid))]
+#    #northunique,northuniqueindex = np.unique(northarray[::-1],return_index=True)
+#    northarray = northarray[::-1]
+#    #southarray = list(dict.fromkeys(tempdata[np.nonzero(np.multiply(tempdata,southgrid))]))
+#    southarray = tempdata[np.nonzero(np.multiply(tempdata,southgrid))]
+#    eastarray = tempdata[np.nonzero(np.multiply(tempdata,eastgrid))]
+#    #eastarray = list(dict.fromkeys(eastarray[::-1]))
+#    eastarray = eastarray[::-1]
+#    #westarray = list(dict.fromkeys(tempdata[np.nonzero(np.multiply(tempdata,westgrid))]))
+#    westarray = tempdata[np.nonzero(np.multiply(tempdata,westgrid))]
+#    nearray = tempdata[np.nonzero(np.multiply(tempdata,negrid))]
+#    #nearray = list(dict.fromkeys(nearray[::-1]))
+#    nearray = nearray[::-1]
+#    nwarray = tempdata[np.nonzero(np.multiply(tempdata,nwgrid))]
+#    #nwarray = list(dict.fromkeys(nwarray[::-1]))
+#    nwarray = nwarray[::-1]
+#    #searray = list(dict.fromkeys(tempdata[np.nonzero(np.multiply(tempdata,segrid))]))
+#    searray = tempdata[np.nonzero(np.multiply(tempdata,segrid))]
+#    #swarray = list(dict.fromkeys(tempdata[np.nonzero(np.multiply(tempdata,swgrid))]))
+#    swarray = tempdata[np.nonzero(np.multiply(tempdata,swgrid))]
+#    
+#    northdistance = [ii / pixelsizekpc for ii in list(range(len(northarray)))]#0.6215
+#    southdistance = [ii / pixelsizekpc for ii in list(range(len(southarray)))]
+#    eastdistance = [ii / pixelsizekpc for ii in list(range(len(eastarray)))]
+#    westdistance = [ii / pixelsizekpc for ii in list(range(len(westarray)))]
+#    nedistance = [ii / pixelsizekpc for ii in list(range(len(nearray)))]
+#    nwdistance = [ii / pixelsizekpc for ii in list(range(len(nwarray)))]
+#    sedistance = [ii / pixelsizekpc for ii in list(range(len(searray)))]
+#    swdistance = [ii / pixelsizekpc for ii in list(range(len(swarray)))]
+#    
+#    f, axarr = plt.subplots(2,2)
+#    f.suptitle('NSEW Regions - ' + outputlabel + ' vs distance in kpc')
+#    axarr[0, 0].errorbar(northdistance, northarray, yerr=northyerr, fmt='o-')#list(range(len(northarray)))
+#    axarr[0, 0].set_title('North')
+#    axarr[0, 1].errorbar(southdistance, southarray, yerr=southyerr, fmt='o-')
+#    axarr[0, 1].set_title('South')
+#    axarr[1, 0].errorbar(eastdistance, eastarray, yerr=eastyerr, fmt='o-')
+#    axarr[1, 0].set_title('East')
+#    axarr[1, 1].errorbar(westdistance, westarray, yerr=westyerr, fmt='o-')
+#    axarr[1, 1].set_title('West')
+#    f.savefig('NSEW_' + outputlabel + '.png', bbox_inches='tight')
+#    
+#    f, axarr = plt.subplots(2,2)
+#    f.suptitle('NSEW Cross Regions - ' + outputlabel + ' vs distance in kpc')
+#    axarr[0, 0].errorbar(nedistance, nearray, yerr=neyerr, fmt='o-')
+#    axarr[0, 0].set_title('North East')
+#    axarr[0, 1].errorbar(nwdistance, nwarray, yerr=nwyerr, fmt='o-')
+#    axarr[0, 1].set_title('North West')
+#    axarr[1, 0].errorbar(sedistance, searray, yerr=seyerr, fmt='o-')
+#    axarr[1, 0].set_title('South East')
+#    axarr[1, 1].errorbar(swdistance, swarray, yerr=swyerr, fmt='o-')
+#    axarr[1, 1].set_title('South West')
+#    f.savefig('NSEW_cross_' + outputlabel + '.png', bbox_inches='tight')
+#        
+#    #_mkmap(betterpressure*(tempdata/radialtemp),"temp_div_pressure.fits",temphead)
+#    subprocess.run('mkdir plots', shell=True)
+#    subprocess.run('mv compass_' + outputlabel + '_image.fits NSEW_' + outputlabel + '.png NSEW_cross_' + outputlabel + '.png plots', shell=True)
 
 
 
