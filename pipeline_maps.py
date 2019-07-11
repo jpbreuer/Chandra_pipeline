@@ -28,23 +28,24 @@ plt.style.use(astropy_mpl_style)
 from astropy.io import fits
 from astropy import wcs
 
-#%%PRG2190423AL8434202
+#%%
 
 
-#temperror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_range_map.fits'
+temperror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_errordepthmap.fits'
 densmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/density_map.fits'
 denserror = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/density_errordepthmap.fits'
 #presmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/better_pressure_map.fits'
 #radtempmap = '/home/jpbreuer/Scripts/chandra_pipeline/radial_temp.fits'
 #entropmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn33_smooth100/maps/better_entropy_map.fits'
-tempmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_map.fits'
-temperrorhighmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_high_map.fits'
-temperrorlowmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_low_map.fits'
+tempmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_map.fits'
+#temperrorhighmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_high_map.fits'
+#temperrorlowmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_low_map.fits'
 
-sn_per_region = 142
+sn_per_region = 33
 reg_smoothness = 100
-binmap = '/home/jpbreuer/Chandra_data/a2256/merged/contbin_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/contbin_binmap.fits'
-mapsdir = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/maps/'
+#binmap = '/home/jpbreuer/Chandra_data/a2256/merged/contbin_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/contbin_binmap.fits'
+binmap = './contbin_binmap_33.fits'
+#mapsdir = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/maps/'
 
 movex = 725; movey = 759
 
@@ -55,9 +56,9 @@ XSPEC=True
 #%%
 def main():
 #    LoadData('./regions-info-xspec-sn' + str(sn_per_region) + '.data')
-#    MakeMaps('./regions-info-spex-sn142.data',binmap)
+#    MakeBasicMaps('./regions-info-xspec-sn33.data',binmap)
 #    MakeBasicMaps('./regions-info-xspec-sn' + str(sn_per_region) + '.data',binmap) #temperature, density, abundance, pressure, entropy
-#    MixedMaps(tempmap,temperror,densmap,denserror) #better entropy, better pressure
+    MixedMaps(tempmap,temperror,densmap,denserror) #better entropy, better pressure
 #    CleanUp(mapsdir)
     
 #    RadialAverage(movex,movey,tempmap)
@@ -65,7 +66,9 @@ def main():
 #    RadialAverage(movex,movey,presmap,'pressure')
 #    RadialAverage(movex,movey,entropmap,'entropy')
 #    RadialCompass(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
-    RadialCone(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
+#    RadialCone(movex,movey,tempmap,temperrorhighmap,temperrorlowmap,0.6215,'temperature')
+    
+#    CheckErrorRatio('/home/jpbreuer/Research/PHD/Data/Chandra/results2256/A2256/Maps/sn33/regions-info-xspec-sn33.data')
     
 #    ColdFrontPlot('/home/jpbreuer/Scripts/chandra_pipeline/regions-info-xspec-sn70.data')
 #    ShockFrontPlot('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/xspec/regions-info-xspec.data')
@@ -109,15 +112,118 @@ def CleanUp(output):
 #_mkmap(presdata-(densdata*(tempdata*(tempdata/radialtemp))),"pressure_residual.fits",preshead)
 
 #%%
-#def DataComboMap(optical,xray,radio,other):
-#    im = fits.open(optical)
-#    opthdr = im[0].header
-#    optimdata = im[0].data
-#    im = fits.open(xray)
-#    hdr = im[0].header
-#    imdata = im[0].data
+
+#sn33 = 0.2 average 
+#sn70 = 0.08 average 
+#sn100 = 0.05 average 
+#sn142 = 0.04 average 
     
     
+#%%
+def CheckErrorRatio(inputdata):
+    data = pd.read_csv(inputdata, delimiter=' ', index_col=0)
+    #        mapdata = data[0:168]
+    mapdata = data
+    region = [];nh = [];temp=[];temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
+    abund=[];abund_low=[];abund_high=[];abund_error_low=[];abund_error_high=[];abund_error_diff=[];redshift=[]
+    norm=[];norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
+    chi=[];dof=[];chi2=[]
+    for index,row in mapdata.iterrows():
+        region.append(index)
+        nh.append(round(row['nH'],4))
+        temp.append(round(row['temperature'],4))
+        temp_low.append(round(row['temp_low'],4))
+        temp_high.append(round(row['temp_high'],4))
+        temp_error_low.append(round(row['temp_error_low'],4))
+        temp_error_high.append(round(row['temp_error_high'],4))
+        temp_error_diff.append(round(row['temp_error_diff'],4))
+        abund.append(round(row['abundance'],4))
+        abund_low.append(round(row['abund_low'],4))
+        abund_high.append(round(row['abund_high'],4))
+        abund_error_low.append(round(row['abund_error_low'],4))
+        abund_error_high.append(round(row['abund_error_high'],4))
+        abund_error_diff.append(round(row['abund_error_diff'],4))
+        redshift.append(round(row['redshift'],4))
+        norm.append(round(row['norm'],4))
+        norm_low.append(round(row['norm_low'],4))
+        norm_high.append(round(row['norm_high'],4))
+        norm_error_low.append(round(row['norm_error_low'],4))
+        norm_error_high.append(round(row['norm_error_high'],4))
+        norm_error_diff.append(round(row['norm_error_diff'],4))
+        chi.append(round(row['chi'],4))
+        dof.append(round(row['dof'],4))
+        chi2.append(round(row['chi2'],4))
+            
+       
+    error_ratio = []
+    for ii in list(range(len(temp))):
+        error_ratio.append((temp_error_diff[ii]/2)/temp[ii])
+    
+    meanerror = np.mean(error_ratio)
+    
+    plt.title("Mean Error Temperature = " + str(meanerror))
+    plt.scatter(list(range(len(error_ratio))),error_ratio)
+    plt.ylim(0,0.3)
+    plt.savefig('mean_error_temp.png', bbox_inches='tight')
+    
+#    error_ratio = []
+#    for ii in list(range(len(temp))):
+#        error_ratio.append((norm_error_diff[ii]/2)/norm[ii])
+#    
+#    meanerror = np.mean(error_ratio)
+#
+#    plt.title("Mean Error Norm = " + str(meanerror))
+#    plt.scatter(list(range(len(error_ratio))),error_ratio)
+#    plt.ylim(0,0.01)
+#    plt.savefig('mean_error_norm.png', bbox_inches='tight')
+
+#    entropy = []; pressure = []; entropyerr = []; pressureerr = [];
+#    for ii in list(range(len(temp))):
+#        entropy.append(temp[ii]/(norm[ii]**(2/3)))
+#        pressure.append(norm[ii]*temp[ii])
+#    
+#    for ii in list(range(len(temp))):
+#        entropyerr.append(np.abs(entropy[ii])*np.sqrt((((norm_error_diff[ii]/2)/norm[ii])**2) + (((temp_error_diff[ii]/2)/temp[ii])**2) + ((2*(norm_error_diff[ii]/2)*(temp_error_diff[ii]/2))/(norm[ii]*temp[ii]))))
+#        pressureerr.append(pressure[ii]*np.sqrt((((temp_error_diff[ii]/2)/temp[ii])**2) + (((2/3)*(norm_error_diff[ii]/2)/norm[ii])**2) - ((2*(norm_error_diff[ii]/2)*(temp_error_diff[ii]/2))/(norm[ii]*temp[ii]))))
+#
+#    error_ratio = []
+#    for ii in list(range(len(temp))):
+#        error_ratio.append((entropyerr[ii]/2)/entropy[ii])
+#    
+#    meanerror = np.mean(error_ratio)
+#    
+#    plt.title("Mean Error Entropy = " + str(meanerror))
+#    plt.scatter(list(range(len(error_ratio))),error_ratio)
+#    plt.ylim(0,0.15)
+#
+#    error_ratio = []
+#    for ii in list(range(len(temp))):
+#        error_ratio.append((pressureerr[ii]/2)/pressure[ii])
+#    
+#    meanerror = np.mean(error_ratio)
+#    
+#    plt.title("Mean Error Pressure = " + str(meanerror))
+#    plt.scatter(list(range(len(error_ratio))),error_ratio)
+#    plt.ylim(0,0.15)    
+
+#%%
+    
+def ErrorThreshMasking(inputfile,errordepth,threshold_percent,name):
+    dat = fits.open(inputfile)
+    head = dat[0].header
+    data = dat[0].data
+    errdat = fits.open(errordepth)
+    errdata = errdat[0].data
+    
+    error_ratio = (errdata/2)/data
+    _mkmap(error_ratio,name + "_error_range_percent_map.fits",head)
+    
+    error_threshold_mask = np.ones(np.shape(error_ratio))
+    error_threshold_mask[error_threshold_mask > threshold_percent] = 0
+    _mkmap(data*error_threshold_mask,name + "_error_thresholded_masked_map.fits",head)
+    
+    
+
 #%%
 def MakeBasicMaps(inputdata,binmap):
     if SPEX:
@@ -180,66 +286,6 @@ def MakeBasicMaps(inputdata,binmap):
             dof.append(round(row['dof'],4))
             chi2.append(round(row['chi2'],4))
             
-
-#    cfdata = data[168:len(data)]
-#    cftemp = [];cfabund = [];cfnorm = [];cfchi2 = []
-#    for index,row in cfdata.iterrows():
-#        cftemp.append(round(row['temperature'],4))
-#        cfabund.append(round(row['abundance'],4))
-#        cfnorm.append(round(row['norm'],4))
-#        cfchi2.append(round(row['chi2'],4))
-#        
-#    #Regions are all mixed up, had to fix manually
-#    longtemp = [cftemp[4],cftemp[3],cftemp[2],cftemp[1],cftemp[0],cftemp[5],cftemp[6],cftemp[7]]
-#    longabund = [cfabund[4],cfabund[3],cfabund[2],cfabund[1],cfabund[0],cfabund[5],cfabund[6],cfabund[7]]
-#    longnorm = [cfnorm[4],cfnorm[3],cfnorm[2],cfnorm[1],cfnorm[0],cfnorm[5],cfnorm[6],cfnorm[7]]
-#    longchi2 = [cfchi2[4],cfchi2[3],cfchi2[2],cfchi2[1],cfchi2[0],cfchi2[5],cfchi2[6],cfchi2[7]]
-#    shlefttemp = [cftemp[9],cftemp[11],cftemp[12],cftemp[13],cftemp[14],cftemp[15],cftemp[16],cftemp[17],cftemp[8],cftemp[25],cftemp[26]]
-#    shleftabund = [cfabund[9],cfabund[11],cfabund[12],cfabund[13],cfabund[14],cfabund[15],cfabund[16],cfabund[17],cfabund[8],cfabund[25],cfabund[26]]
-#    shleftnorm = [cfnorm[9],cfnorm[11],cfnorm[12],cfnorm[13],cfnorm[14],cfnorm[15],cfnorm[16],cfnorm[17],cfnorm[8],cfnorm[25],cfnorm[26]]
-#    shleftchi2 = [cfchi2[9],cfchi2[11],cfchi2[12],cfchi2[13],cfchi2[14],cfchi2[15],cfchi2[16],cfchi2[17],cfchi2[8],cfchi2[25],cfchi2[26]]
-#    shrighttemp = [cftemp[10],cftemp[18],cftemp[19],cftemp[20],cftemp[21],cftemp[22],cftemp[23],cftemp[24],cftemp[27],cftemp[28],cftemp[29]]
-#    shrightabund = [cfabund[10],cfabund[18],cfabund[19],cfabund[20],cfabund[21],cfabund[22],cfabund[23],cfabund[24],cfabund[27],cfabund[28],cfabund[29]]
-#    shrightnorm = [cfnorm[10],cfnorm[18],cfnorm[19],cfnorm[20],cfnorm[21],cfnorm[22],cfnorm[23],cfnorm[24],cfnorm[27],cfnorm[28],cfnorm[29]]
-#    shrightchi2 = [cfchi2[10],cfchi2[18],cfchi2[19],cfchi2[20],cfchi2[21],cfchi2[22],cfchi2[23],cfchi2[24],cfchi2[27],cfchi2[28],cfchi2[29]]
-#
-#    f, axarr = plt.subplots(2,2)
-#    f.suptitle('Long Regions')
-#    axarr[0, 0].plot(list(range(len(longtemp))), longtemp)
-#    axarr[0, 0].set_title('Temperature')
-#    axarr[0, 1].scatter(list(range(len(longtemp))), longabund)
-#    axarr[0, 1].set_title('Abundance')
-#    axarr[1, 0].plot(list(range(len(longtemp))), longnorm)
-#    axarr[1, 0].set_title('Norm')
-#    axarr[1, 1].scatter(list(range(len(longtemp))), longchi2)
-#    axarr[1, 1].set_title('$\chi^2$')
-#    f.savefig('longregions.png', bbox_inches='tight')
-#    
-#    f, axarr = plt.subplots(2,2)
-#    f.suptitle('Short Left Regions')
-#    axarr[0, 0].plot(list(range(len(shlefttemp))), shlefttemp)
-#    axarr[0, 0].set_title('Temperature')
-#    axarr[0, 1].scatter(list(range(len(shlefttemp))), shleftabund)
-#    axarr[0, 1].set_title('Abundance')
-#    axarr[1, 0].plot(list(range(len(shlefttemp))), shleftnorm)
-#    axarr[1, 0].set_title('Norm')
-#    axarr[1, 1].scatter(list(range(len(shlefttemp))), shleftchi2)
-#    axarr[1, 1].set_title('$\chi^2$')
-#    f.savefig('shortleftregions.png', bbox_inches='tight')
-#    
-#    f, axarr = plt.subplots(2,2)
-#    f.suptitle('Short Right Regions')
-#    axarr[0, 0].plot(list(range(len(shrighttemp))), shrighttemp)
-#    axarr[0, 0].set_title('Temperature')
-#    axarr[0, 1].scatter(list(range(len(shrighttemp))), shrightabund)
-#    axarr[0, 1].set_title('Abundance')
-#    axarr[1, 0].plot(list(range(len(shrighttemp))), shrightnorm)
-#    axarr[1, 0].set_title('Norm')
-#    axarr[1, 1].scatter(list(range(len(shrighttemp))), shrightchi2)
-#    axarr[1, 1].set_title('$\chi^2$')
-#    f.savefig('shortrightregions.png', bbox_inches='tight')
-        
-#%%
 #    LoadData(inputdata)
     #IMAGE DATA
     im = fits.open(binmap)
@@ -263,7 +309,7 @@ def MakeBasicMaps(inputdata,binmap):
         overlay[1].set_axislabel('Declination (J2000)')
         f.savefig(output, bbox_inches='tight')
     
-    ## NORM MAPS!!!!!!!!!!!!!!!PRG2190423AL8434202
+    ## NORM MAPS
     boolmask = [];region_pixsum = []
     for ii in region:
         imreg = imdata == ii
@@ -456,14 +502,20 @@ def MakeBasicMaps(inputdata,binmap):
     
     ##ENTROPY/PRESSURE MAPS
     entropymap = tempmap/(densmap**(2/3))
-    entroerrordepthmap = (temperrordepthmap/2)/((denserrordepthmap/2)**(2/3))
     pressuremap = densmap*tempmap
-    presserrordepthmap = (denserrordepthmap/2)*(temperrordepthmap/2)
-    
+    entroerrordepthmap = np.abs(entropymap)*np.sqrt((((denserrordepthmap/2)/densmap)**2) + (((temperrordepthmap/2)/tempmap)**2) + ((2*(denserrordepthmap/2)*(temperrordepthmap/2))/(densmap*tempmap)))
+    presserrordepthmap = pressuremap*np.sqrt((((temperrordepthmap/2)/tempmap)**2) + (((2/3)*(denserrordepthmap/2)/densmap)**2) - ((2*(denserrordepthmap/2)*(temperrordepthmap/2))/(densmap*tempmap)))
+    sigmat = 6.65245*10**-25
+    pseudocompy = (sigmat*pressuremap*(3.086*10**24))/511.0
+    _mkmap(pseudocompy, "pseudocomptony_map.fits",hdr)
+
     _mkmap(entropymap,"entropy_map.fits",hdr)
     _mkmap(pressuremap,"pressure_map.fits",hdr)
     _mkmap(entroerrordepthmap,"entropy_error_range_map.fits",hdr)
     _mkmap(presserrordepthmap,"pressure_error_range_map.fits",hdr)
+    
+    _mkmap((presserrordepthmap/2)/pressuremap,"pressure_error_range_percent_map.fits",hdr)
+    
     
     entropyelow = tempelowmap/(denselowmap**(2/3))
     entropyehigh = tempehighmap/(densehighmap**(2/3))
@@ -474,6 +526,48 @@ def MakeBasicMaps(inputdata,binmap):
     _mkmap(entropyehigh,"entropy_error_high_map.fits",hdr)
     _mkmap(pressureelow,"pressure_error_low_map.fits",hdr)
     _mkmap(pressureehigh,"pressure_error_high_map.fits",hdr)
+    
+    
+#%%
+    
+def MixedMaps(tempmap,temperror,densmap,denserrordepthmap):
+    ###--- BETTER MAPS --->>> 
+    temp = fits.open(tempmap)
+    temp_imdata = temp[0].data
+    temperr = fits.open(temperror)
+    temperr_hdr = temperr[0].header
+    temperr_imdata = temperr[0].data
+    dens = fits.open(densmap)
+    dens_imdata = dens[0].data
+    denserr = fits.open(denserrordepthmap)
+    denserr_imdata = denserr[0].data
+    
+    betterentropy = temp_imdata/(dens_imdata**(2/3))
+    betterpressure = dens_imdata*temp_imdata
+    betterpresserrordepthmap = np.abs(betterpressure)*np.sqrt(((denserr_imdata/dens_imdata)**2) + ((temperr_imdata/temp_imdata)**2) + ((2*denserr_imdata*temperr_imdata)/(dens_imdata*temp_imdata)))
+    betterentroerrordepthmap = betterentropy*np.sqrt(((temperr_imdata/temp_imdata)**2) + (((2/3)*denserr_imdata/dens_imdata)**2) - ((2*denserr_imdata*temperr_imdata)/(dens_imdata*temp_imdata)))
+    
+    _mkmap(betterentropy,"better_entropy_map.fits",temperr_hdr)
+    _mkmap(1/betterentropy,"better_entropy_map_inverse.fits",temperr_hdr)
+    _mkmap(betterpressure,"better_pressure_map.fits",temperr_hdr)
+    _mkmap(betterentroerrordepthmap,"better_entropy_errordepthmap.fits",temperr_hdr)
+    _mkmap(betterpresserrordepthmap,"better_pressure_errordepthmap.fits",temperr_hdr)   
+    
+    sigmat = 6.65245*10**-25
+    pseudocompy = (sigmat*betterpressure*(3.086*10**24))/511.0
+    _mkmap(pseudocompy, "pseudocomptony_map.fits",hdr)
+    percentmask = (presserrordepthmap/2)/pressuremap
+#%%
+    
+    
+def ModelDividedMaps(data,model):
+    dat = fits.open(data)
+    head = dat[0].header
+    data = dat[0].data
+    modat = fits.open(model)
+    modata = modat[0].data
+    
+    _mkmap(data*(data/modata),"resid_div_data.fits",head)
     
 
 #%%
@@ -662,46 +756,6 @@ def ShockFrontPlot(inputdata):
     
     subprocess.run('mkdir plots', shell=True)
     subprocess.run('mv shockregions.png plots', shell=True)
-
-
-
-#%%
-    
-    
-def MixedMaps(tempmap,temperror,densmap,denserrordepthmap):
-    ###--- BETTER MAPS --->>> !!!!!!!!!!!!!!!!
-    temp = fits.open(tempmap)
-    temp_imdata = temp[0].data
-    temperr = fits.open(temperror)
-    temperr_hdr = temperr[0].header
-    temperr_imdata = temperr[0].data
-    dens = fits.open(densmap)
-    dens_imdata = dens[0].data
-    denserr = fits.open(denserrordepthmap)
-    denserr_imdata = denserr[0].data
-    
-    betterentropy = temp_imdata/(dens_imdata**(2/3))
-    betterentroerrordepthmap = (temperr_imdata)/(denserr_imdata**(2/3))
-    betterpressure = dens_imdata*temp_imdata
-    betterpresserrordepthmap = (denserr_imdata)*(temperr_imdata)
-    
-    _mkmap(betterentropy,"better_entropy_map.fits",temperr_hdr)
-    _mkmap(1/betterentropy,"better_entropy_map_inverse.fits",temperr_hdr)
-    _mkmap(betterpressure,"better_pressure_map.fits",temperr_hdr)
-    _mkmap(betterentroerrordepthmap,"better_entropy_errordepthmap.fits",temperr_hdr)
-    _mkmap(betterpresserrordepthmap,"better_pressure_errordepthmap.fits",temperr_hdr)    
-    
-#%%
-    
-    
-def ModelDividedMaps(data,model):
-    dat = fits.open(data)
-    head = dat[0].header
-    data = dat[0].data
-    modat = fits.open(model)
-    modata = modat[0].data
-    
-    _mkmap(data*(data/modata),"resid_div_data.fits",head)
     
     
     
