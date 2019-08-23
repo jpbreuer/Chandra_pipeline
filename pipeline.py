@@ -750,7 +750,7 @@ def ParseRedshiftOutput(inputdir):
             except:
                 pass
     
-            file.write(str(ii) + ' ' + nh + ' ' + temp + ' ' + templow + ' ' + temphigh + ' ' + tempelow + ' ' + tempehigh + ' ' + temperange + ' ' + abund + ' ' + abundlow + ' ' + abundhigh + ' ' + abundelow + ' ' + abundehigh + ' ' + abunderange + ' ' + redshift + ' ' + redlow + ' ' + redhigh + ' ' + redelow + ' ' + redehigh + ' ' + rederange' ' + norm + ' ' + normlow + ' ' + normhigh + ' ' + normelow + ' ' + normehigh + ' ' + normerange + ' ' + chi + ' ' + dof + ' ' + chi2 + '\n')# + ' ' + press + ' ' + presselow + ' ' + pressehigh + ' ' + presslow + ' ' + presshigh + ' ' + presserange + ' ' + entropy + ' ' + entroelow + ' ' + entroehigh + ' ' + entrolow + ' ' + entrohigh + ' ' + entroerange + '\n')
+            file.write(str(ii) + ' ' + nh + ' ' + temp + ' ' + templow + ' ' + temphigh + ' ' + tempelow + ' ' + tempehigh + ' ' + temperange + ' ' + abund + ' ' + abundlow + ' ' + abundhigh + ' ' + abundelow + ' ' + abundehigh + ' ' + abunderange + ' ' + redshift + ' ' + redlow + ' ' + redhigh + ' ' + redelow + ' ' + redehigh + ' ' + rederange + ' ' + norm + ' ' + normlow + ' ' + normhigh + ' ' + normelow + ' ' + normehigh + ' ' + normerange + ' ' + chi + ' ' + dof + ' ' + chi2 + '\n')# + ' ' + press + ' ' + presselow + ' ' + pressehigh + ' ' + presslow + ' ' + presshigh + ' ' + presserange + ' ' + entropy + ' ' + entroelow + ' ' + entroehigh + ' ' + entrolow + ' ' + entrohigh + ' ' + entroerange + '\n')
         file.close()
     
     
