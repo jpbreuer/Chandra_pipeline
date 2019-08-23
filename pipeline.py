@@ -713,7 +713,7 @@ def ParseRedshiftOutput(inputdir):
         
         #loop over regions here
         for ii in list(range(sexnum)):#regnum
-            regdata = open(inputdir + '/xspec_redshift/reg_' + str(ii) + '_data_redshift.xcm','r')
+            regdata = open(inputdir + 'xspec_redshift/reg_' + str(ii) + '_data_redshift.xcm','r')
             info = regdata.read().split()
             
             nh = str(info[0])
