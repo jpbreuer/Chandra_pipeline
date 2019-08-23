@@ -49,7 +49,7 @@ simple_hardnessmap = True
 # From this point it's assumed that merged observation has been reduced with square_fov
 #!! Check that broad_thresh_square_sps.fits exists in merged observation directory 
 adaptivebin = True
-contourbin = True; sn_per_region = 142; reg_smoothness = 100
+contourbin = True; sn_per_region = 100; reg_smoothness = 100
 minx = 3069; miny = 3175
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
 # sn approx sqrt number of counts: 40k = 200, 20k = 141.42, 10k = 100, 5k = 70.71
@@ -637,10 +637,119 @@ def _filter_txt_lines_to(fname_in, substr, fname_out):
 	open(fname_out, 'w').write(joined_lines)# + '\n'
     
 
+#%%
+# Open file = open('regions-info-xspec.data', 'r')
+# Grab temperature, density, frozen abundance
+# For each region add temperature[ii] density [ii] and freeze values
+# Thaw redshift and then refit
+# Add a new column to the regionns-info-xspec.data file with the new z values
+
+#file = open('/home/jpbreuer/Research/PHD/Scripts/Chandra_pipeline/regions-info-xspec-sn100.data','r')
+#data = file.readlines()
+def FitRedshift(inputdata):
+    data = pd.read_csv(inputdata, delimiter=' ', index_col=0)
+    #        mapdata = data[0:168]
+    mapdata = data
+    region = [];nh = [];temp=[];temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
+    abund=[];abund_low=[];abund_high=[];abund_error_low=[];abund_error_high=[];abund_error_diff=[];redshift=[]
+    norm=[];norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
+    chi=[];dof=[];chi2=[]
+    for index,row in mapdata.iterrows():
+        region.append(index)
+        nh.append(round(row['nH'],4))
+        temp.append(round(row['temperature'],4))
+#        temp_low.append(round(row['temp_low'],4))
+#        temp_high.append(round(row['temp_high'],4))
+#        temp_error_low.append(round(row['temp_error_low'],4))
+#        temp_error_high.append(round(row['temp_error_high'],4))
+#        temp_error_diff.append(round(row['temp_error_diff'],4))
+#        abund.append(round(row['abundance'],4))
+#        abund_low.append(round(row['abund_low'],4))
+#        abund_high.append(round(row['abund_high'],4))
+#        abund_error_low.append(round(row['abund_error_low'],4))
+#        abund_error_high.append(round(row['abund_error_high'],4))
+#        abund_error_diff.append(round(row['abund_error_diff'],4))
+        redshift.append(round(row['redshift'],4))
+        norm.append(round(row['norm'],4))
+#        norm_low.append(round(row['norm_low'],4))
+#        norm_high.append(round(row['norm_high'],4))
+#        norm_error_low.append(round(row['norm_error_low'],4))
+#        norm_error_high.append(round(row['norm_error_high'],4))
+#        norm_error_diff.append(round(row['norm_error_diff'],4))
+#        chi.append(round(row['chi'],4))
+#        dof.append(round(row['dof'],4))
+#        chi2.append(round(row['chi2'],4))
+
+
+    file2 = open('xspecfitting-redshift.sh', 'w')
+    file2.write('mkdir ' + resultsdir + '/xspec_redshift\n')
+#    file2.write('cp xspecfitting.sh ' + specfile_outputdir + '\n')
+    for ii in list(range(sexnum)):#len(obsids)
+        file3 = open(specfile_outputdir + '/reg_' + str(ii) + '_xspec_fit_redshift.script','w')
+#        file3.write('xspec << EOF\n')
+        file3.write('statistic cstat\nsetplot energy\ncpd ' + resultsdir + '/xspec/reg_' + str(ii) + '_xspec_fit_redshift.ps/cps\n\n')
+        for jj in list(range(len(obsids))): #regnum
+            file3.write('data ' + str(jj+1) + ':' + str(jj+1) + ' ' + specfile_outputdir + '/xaf_' + obsids[jj] + '_' + str(ii) + '.grp\n/*\n')
+            file3.write('ig ' + str(jj+1) + ':' + str(jj+1) + ' bad\nig ' + str(jj+1) + ':' + str(jj+1) + ' **-0.5 7.5-**\n')
+            file3.write('\nmo phabs(apec)\n/*\nnewpar 1 0.041 -1\nnewpar 2 ' + temp[ii] + ' -1\nnewpar 3 0.3\nnewpar 4 0.058100\nnewpar 5 ' + norm[ii] + ' -1\nthaw 4\nquery yes\nfit\nsetplot back\nfit\npl ld res\n\n')
+        file3.write('set fileall [open ' + resultsdir + '/xspec_redshift/reg_' + str(ii) + '_data_redshift.xcm w 0600]\n')
+        file3.write('tclout param 1\nscan $xspec_tclout "%f" nh\ntclout param 2\nscan $xspec_tclout "%f" temp\nerror 1. 2\ntclout error 2\nscan $xspec_tclout "%f %f" temp_low temp_high\ntclout param 3\nscan $xspec_tclout "%f" abundance\nerror 1. 3\ntclout error 3\nscan $xspec_tclout "%f %f" abundance_low abundance_high\ntclout param 4\nscan $xspec_tclout "%f" redshift\nerror 1. 2\ntclout error 2\nscan $xspec_tclout "%f %f" redshift_low redshift_high\ntclout param 5\nscan $xspec_tclout "%f" norm1\nerror 1. 5\ntclout error 5\nscan $xspec_tclout "%f %f" norm1_low norm1_high\ntclout stat\nscan $xspec_tclout "%f" chi\ntclout dof\nscan $xspec_tclout "%f" dof\n')
+        file3.write('puts $fileall "$nh $temp $temp_low $temp_high $abundance $abundance_low $abundance_high $redshift $redshift_low $redshift_high $norm1 $norm1_low $norm1_high $chi $dof"\nclose $fileall\n\n')
+        file3.write('cpd none\nsave all ' + resultsdir + '/xspec_redshift/reg_' + str(ii) + '_redshift_savestate.tcl\nquit y\n')
+#        file3.write('EOF\n\n')
+        file3.close()
+        file2.write('xspec - reg_' + str(ii) + '_xspec_fit_redshift.script\n')
+    file2.close()
+
+def ParseRedshiftOutput(inputdir):
+    if XSPEC:
+        file = open('regions-info-xspec-redshift.data', 'w')
+        file.write('region nH temperature temp_low temp_high temp_error_low temp_error_high temp_error_diff abundance abund_low abund_high abund_error_low abund_error_high abund_error_diff redshift redshift_low redshift_high redshift_error_low redshift_error_high redshift_error_diff norm norm_low norm_high norm_error_low norm_error_high norm_error_diff chi dof chi2\n')
+        
+        #loop over regions here
+        for ii in list(range(sexnum)):#regnum
+            regdata = open(inputdir + '/xspec_redshift/reg_' + str(ii) + '_data_redshift.xcm','r')
+            info = regdata.read().split()
+            
+            nh = str(info[0])
+            
+            temp = str(info[1])
+            templow = str(info[2])
+            temphigh = str(info[3])
+            tempelow = str(round(float(temp) - float(templow),5))
+            tempehigh = str(round(float(temphigh) - float(temp),5))
+            temperange = str(round(float(tempehigh) + np.abs(float(tempelow)),5))
+            
+            abund = str(info[4])
+            abundlow = str(info[5])
+            abundhigh = str(info[6])
+            abundelow = str(round(float(abund) - float(abundlow),5))
+            abundehigh = str(round(float(abundhigh) - float(abund),5))
+            abunderange = str(round(float(abundehigh) + np.abs(float(abundelow)),5))
+            
+            redshift = str(info[7])
+            redlow = str(info[8])
+            redhigh = str(info[9])
+            redelow = str(round(float(redshift) - float(redlow),5))
+            redehigh = str(round(float(redhigh) - float(redshift),5))
+            rederange = str(round(float(redehigh) + np.abs(float(redelow)),5))
+            
+            norm = str(info[10])
+            normlow = str(info[11])
+            normhigh = str(info[12])
+            normelow = str(float(norm) - float(normlow))
+            normehigh = str(float(normhigh) - float(norm))
+            normerange = str(round(float(normehigh) + np.abs(float(normelow)),5))
+            
+            chi = str(info[13])
+            dof = str(info[14])
+            try:
+                chi2 = str(round(float(chi)/float(dof),5))
+            except:
+                pass
     
-    
-    
-    
+            file.write(str(ii) + ' ' + nh + ' ' + temp + ' ' + templow + ' ' + temphigh + ' ' + tempelow + ' ' + tempehigh + ' ' + temperange + ' ' + abund + ' ' + abundlow + ' ' + abundhigh + ' ' + abundelow + ' ' + abundehigh + ' ' + abunderange + ' ' + redshift + ' ' + redlow + ' ' + redhigh + ' ' + redelow + ' ' + redehigh + ' ' + rederange' ' + norm + ' ' + normlow + ' ' + normhigh + ' ' + normelow + ' ' + normehigh + ' ' + normerange + ' ' + chi + ' ' + dof + ' ' + chi2 + '\n')# + ' ' + press + ' ' + presselow + ' ' + pressehigh + ' ' + presslow + ' ' + presshigh + ' ' + presserange + ' ' + entropy + ' ' + entroelow + ' ' + entroehigh + ' ' + entrolow + ' ' + entrohigh + ' ' + entroerange + '\n')
+        file.close()
     
     
     
