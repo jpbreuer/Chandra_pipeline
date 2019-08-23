@@ -94,7 +94,9 @@ def main():
     #run ./spexfitting.sh
     #run ./xspecfitting.sh
     
-    ParseOutput('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/')#resultsdir
+#    ParseOutput('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/')#resultsdir
+    FitRedshift('./regions-info-xspec-sn100.data')
+    ParseRedshiftOutput('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn100_smooth100/')
 #    MakeMaps('./regions-info-spex.data',binmap)
 #    MakeBasicMaps('./regions-info-xspec.data',binmap)
 #    MixedMaps('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_errordepthmap.fits')
