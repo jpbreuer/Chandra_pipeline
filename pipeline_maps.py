@@ -661,7 +661,7 @@ def MakeRedshiftMap(inputdata,binmap):#regions-info-xspec-redshift.data
     boolmask = []
     for ii in region:
         imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*red_error_low[ii])
+        boolmask.append((imreg.astype(np.int))*redshift_error_low[ii])
     
     redelowmap = sum(boolmask)
     #tempmap[tempmap >= 18] = np.nan
@@ -670,7 +670,7 @@ def MakeRedshiftMap(inputdata,binmap):#regions-info-xspec-redshift.data
     boolmask = []
     for ii in region:
         imreg = imdata == ii
-        boolmask.append((imreg.astype(np.int))*red_error_high[ii])
+        boolmask.append((imreg.astype(np.int))*redshift_error_high[ii])
     
     redehighmap = sum(boolmask)
     #tempmap[tempmap >= 18] = np.nan
