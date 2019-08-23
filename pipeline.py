@@ -49,7 +49,10 @@ simple_hardnessmap = True
 # From this point it's assumed that merged observation has been reduced with square_fov
 #!! Check that broad_thresh_square_sps.fits exists in merged observation directory 
 adaptivebin = True
-contourbin = True; sn_per_region = 100; reg_smoothness = 100
+contourbin = True; 
+
+sn_per_region = 100; reg_smoothness = 100
+
 minx = 3069; miny = 3175
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
 # sn approx sqrt number of counts: 40k = 200, 20k = 141.42, 10k = 100, 5k = 70.71
@@ -652,10 +655,10 @@ def FitRedshift(inputdata):
     data = pd.read_csv(inputdata, delimiter=' ', index_col=0)
     #        mapdata = data[0:168]
     mapdata = data
-    region = [];nh = [];temp=[];temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
-    abund=[];abund_low=[];abund_high=[];abund_error_low=[];abund_error_high=[];abund_error_diff=[];redshift=[]
-    norm=[];norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
-    chi=[];dof=[];chi2=[]
+    region = [];nh = [];temp=[];#temp_low=[];temp_high=[];temp_error_low=[];temp_error_high=[];temp_error_diff=[]
+#    abund=[];abund_low=[];abund_high=[];abund_error_low=[];abund_error_high=[];abund_error_diff=[];redshift=[]
+    norm=[];#norm_low=[];norm_high=[];norm_error_low=[];norm_error_high=[];norm_error_diff=[]
+#    chi=[];dof=[];chi2=[]
     for index,row in mapdata.iterrows():
         region.append(index)
         nh.append(round(row['nH'],4))
@@ -671,7 +674,7 @@ def FitRedshift(inputdata):
 #        abund_error_low.append(round(row['abund_error_low'],4))
 #        abund_error_high.append(round(row['abund_error_high'],4))
 #        abund_error_diff.append(round(row['abund_error_diff'],4))
-        redshift.append(round(row['redshift'],4))
+#        redshift.append(round(row['redshift'],4))
         norm.append(round(row['norm'],4))
 #        norm_low.append(round(row['norm_low'],4))
 #        norm_high.append(round(row['norm_high'],4))
