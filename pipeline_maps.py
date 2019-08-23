@@ -41,10 +41,10 @@ tempmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth
 #temperrorhighmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_high_map.fits'
 #temperrorlowmap = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn142_smooth100/maps/temp_error_low_map.fits'
 
-sn_per_region = 33
+sn_per_region = 100
 reg_smoothness = 100
-#binmap = '/home/jpbreuer/Chandra_data/a2256/merged/contbin_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/contbin_binmap.fits'
-binmap = './contbin_binmap_33.fits'
+binmap = '/home/jpbreuer/Chandra_data/a2256/merged/contbin_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/contbin_binmap.fits'
+#binmap = './contbin_binmap_33.fits'
 #mapsdir = '/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn' + str(sn_per_region) + '_smooth' + str(reg_smoothness) + '/maps/'
 
 movex = 725; movey = 759
@@ -58,8 +58,10 @@ def main():
 #    LoadData('./regions-info-xspec-sn' + str(sn_per_region) + '.data')
 #    MakeBasicMaps('./regions-info-xspec-sn33.data',binmap)
 #    MakeBasicMaps('./regions-info-xspec-sn' + str(sn_per_region) + '.data',binmap) #temperature, density, abundance, pressure, entropy
-    MixedMaps(tempmap,temperror,densmap,denserror) #better entropy, better pressure
+#    MixedMaps(tempmap,temperror,densmap,denserror) #better entropy, better pressure
 #    CleanUp(mapsdir)
+
+    MakeRedshiftMap('./regions-info-xspec-redshift-sn100.data',binmap)
     
 #    RadialAverage(movex,movey,tempmap)
 #    ModelDividedMaps(data,model) #resid_div_data.fits
