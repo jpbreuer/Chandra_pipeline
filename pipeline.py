@@ -692,7 +692,7 @@ def FitRedshift(inputdata):
     for ii in list(range(sexnum)):#len(obsids)
         file3 = open(specfile_outputdir + '/reg_' + str(ii) + '_xspec_fit_redshift.script','w')
 #        file3.write('xspec << EOF\n')
-        file3.write('statistic cstat\nsetplot energy\ncpd ' + resultsdir + '/xspec/reg_' + str(ii) + '_xspec_fit_redshift.ps/cps\n\n')
+        file3.write('statistic cstat\nsetplot energy\ncpd ' + resultsdir + '/xspec_redshift/reg_' + str(ii) + '_xspec_fit_redshift.ps/cps\n\n')
         for jj in list(range(len(obsids))): #regnum
             file3.write('data ' + str(jj+1) + ':' + str(jj+1) + ' ' + specfile_outputdir + '/xaf_' + obsids[jj] + '_' + str(ii) + '.grp\n/*\n')
             file3.write('ig ' + str(jj+1) + ':' + str(jj+1) + ' bad\nig ' + str(jj+1) + ':' + str(jj+1) + ' **-0.5 7.5-**\n')
