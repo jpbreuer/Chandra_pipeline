@@ -51,7 +51,7 @@ simple_hardnessmap = True
 adaptivebin = True
 contourbin = True; 
 
-sn_per_region = 100; reg_smoothness = 100
+sn_per_region = 250; reg_smoothness = 100
 
 minx = 3069; miny = 3175
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
@@ -87,7 +87,7 @@ def main():
 #    PreProcessing(no_emission,no_pointsources,fov_name)
     #run ./preprocessing.sh
 
-#    Preliminary_Products()
+    Preliminary_Products()
     #run ./preliminary_products.sh
 #    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
@@ -98,8 +98,8 @@ def main():
     #run ./xspecfitting.sh
     
 #    ParseOutput('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/')#resultsdir
-    FitRedshift('./regions-info-xspec-sn100.data')
-    ParseRedshiftOutput('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn100_smooth100/')
+#    FitRedshift('./regions-info-xspec-sn100.data')
+#    ParseRedshiftOutput('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn100_smooth100/')
 #    MakeMaps('./regions-info-spex.data',binmap)
 #    MakeBasicMaps('./regions-info-xspec.data',binmap)
 #    MixedMaps('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/temp_error_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_map.fits','/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/maps/density_errordepthmap.fits')
