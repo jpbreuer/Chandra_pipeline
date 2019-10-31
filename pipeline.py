@@ -51,7 +51,7 @@ simple_hardnessmap = True
 adaptivebin = True
 contourbin = True; 
 
-sn_per_region = 250; reg_smoothness = 100
+sn_per_region = 70; reg_smoothness = 100
 
 minx = 3069; miny = 3175
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
@@ -87,9 +87,9 @@ def main():
 #    PreProcessing(no_emission,no_pointsources,fov_name)
     #run ./preprocessing.sh
 
-    Preliminary_Products()
+#    Preliminary_Products()
     #run ./preliminary_products.sh
-#    _RegCoordChange(regdir)
+    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
     
 #    Processing(sexdir)
