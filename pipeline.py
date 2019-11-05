@@ -89,10 +89,10 @@ def main():
 
 #    Preliminary_Products()
     #run ./preliminary_products.sh
-    _RegCoordChange(regdir)
+#    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
     
-#    Processing(sexdir)
+    Processing(sexdir)
     #run ./pre-fitting.sh
     #run ./spexfitting.sh
     #run ./xspecfitting.sh
