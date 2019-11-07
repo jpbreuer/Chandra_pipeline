@@ -92,7 +92,7 @@ def main():
 #    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
     
-#    Processing(sexdir)
+    Processing(sexdir)
     #run ./pre-fitting.sh
     #run ./spexfitting.sh
     #run ./xspecfitting.sh
