@@ -28,8 +28,8 @@ from astropy import wcs
 #from scipy.stats import multivariate_normal
 
 ###--- Required ---> Make these directories if they do not exist 
-cluster = '"a2256"'     ##'"07 17 31.20" "+37 45 35.4"'#
-parentdir = '/home/jpbreuer/Chandra_data/a2256'# + cluster + '/'
+cluster = '"a1835"'     ##'"07 17 31.20" "+37 45 35.4"'#
+parentdir = '/home/jpbreuer/Chandra_data/a1835'# + cluster + '/'
 specfile_outputdir = parentdir + '/specfile_output'
 XSPEC = True #keep one True and one False, not both True, else issues parsing + making maps
 SPEX = False
@@ -51,9 +51,10 @@ simple_hardnessmap = True
 adaptivebin = True
 contourbin = True; 
 
-sn_per_region = 250; reg_smoothness = 100
+sn_per_region = 70; reg_smoothness = 100
 
 minx = 3069; miny = 3175
+
 #!! Need to manually find dimensions (minx and miny) of broad_thresh_square_sps.fits for producing the regions
 # sn approx sqrt number of counts: 40k = 200, 20k = 141.42, 10k = 100, 5k = 70.71
 # keep reg_smoothness at 100 or high
@@ -84,10 +85,10 @@ mapsdir = resultsdir + '/maps'
 
 def main():
     #input no emission region, pointsources region, desired fov subset region 
-#    PreProcessing(no_emission,no_pointsources,fov_name)
+    PreProcessing(no_emission,no_pointsources,fov_name)
     #run ./preprocessing.sh
 
-    Preliminary_Products()
+#    Preliminary_Products()
     #run ./preliminary_products.sh
 #    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
@@ -208,9 +209,12 @@ def PreProcessing(no_emission_reg,pointsources_reg,fov):#region file with no poi
         threshsum = np.sum(threshimdata)
         fluxsum = np.sum(fluximdata)
         threshav = threshsum/len(threshimdata)
+#        fluxav = fluxsum/len(fluximdata)
+#        scaledflux = (fluximdata*(threshav/fluxav))#(threshav/fluxav)
+#        _mkmap(scaledflux*28*(np.amax(threshimdata)/np.amax(scaledflux)),parentdir + '/merged/scaled_broad_flux.fits',fluxhdr)
         fluxav = fluxsum/len(fluximdata)
-        scaledflux = (fluximdata*(threshav/fluxav))#(threshav/fluxav)
-        _mkmap(scaledflux*28*(np.amax(threshimdata)/np.amax(scaledflux)),parentdir + '/merged/scaled_broad_flux.fits',fluxhdr)
+        scaledflux = (2.5*fluximdata*(threshav/fluxav))#(threshav/fluxav)
+        _mkmap(scaledflux,parentdir + '/merged/scaled_broad_flux.fits',fluxhdr)
         
         file.write("echo 'CHECK SCALING OF SCALED FLUX IMG WITH THRESHOLD'\n")
         file.write("echo 'Removing Point Sources'\n")
@@ -256,13 +260,13 @@ def FindData(input):
 obsids, obsids_padded, obsids_fullstr = FindData(cluster)
 
 #######################
-obsids = obsids[3:]
-obsids_padded = obsids_padded[3:]
+#obsids = obsids[3:]
+#obsids_padded = obsids_padded[3:]
 #######################
 ###--- OPTIONAL --->
-obsids = ['2419','16129','16514','16515','16516']
-obsids_padded = ['02419','16129','16514','16515','16516']
-obsid_fullstr = '02419 16129 16514 16515 16516'
+#obsids = ['2419','16129','16514','16515','16516']
+#obsids_padded = ['02419','16129','16514','16515','16516']
+#obsid_fullstr = '02419 16129 16514 16515 16516'
 #######################
 
 #%%
