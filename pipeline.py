@@ -45,11 +45,11 @@ no_pointsources = parentdir + '/regionfiles/broad_src_0.5-7-pointsources.reg'
 fov_name = parentdir + '/regionfiles/square.reg' # or False
 
 ###--- Image Analysis Algorithm Flags --->
-simple_hardnessmap = True
+simple_hardnessmap = False
 # From this point it's assumed that merged observation has been reduced with square_fov
 #!! Check that broad_thresh_square_sps.fits exists in merged observation directory 
-adaptivebin = True
-contourbin = True; 
+adaptivebin = False
+contourbin = True
 
 sn_per_region = 70; reg_smoothness = 100
 
@@ -59,10 +59,10 @@ minx = 3069; miny = 3175
 # sn approx sqrt number of counts: 40k = 200, 20k = 141.42, 10k = 100, 5k = 70.71
 # keep reg_smoothness at 100 or high
 
-circle_mincounts = True; mincount = 5000
-unsharp_mask = True
-ggm = True
-directional_ggm = 'Sobel' #'Laplace', 'Sobel', 'Roberts', 'Prewitt', 'Robinson', 'Kirsch'
+circle_mincounts = False; mincount = 5000
+unsharp_mask = False
+ggm = False
+directional_ggm = False #'Sobel' #'Laplace', 'Sobel', 'Roberts', 'Prewitt', 'Robinson', 'Kirsch'
 skeleton = False
 
 #%%
@@ -93,12 +93,12 @@ def main():
 #    _RegCoordChange(regdir)
     #run ./regcoordchange.sh
     
-#    Processing(sexdir)
+    Processing(sexdir)
     #run ./pre-fitting.sh
     #run ./spexfitting.sh
     #run ./xspecfitting.sh
     
-#    ParseOutput('/home/jpbreuer/Chandra_data/a2256/merged/northprobe/')#resultsdir
+    ParseOutput('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn70_smooth100/')#resultsdir
 #    FitRedshift('./regions-info-xspec-sn100.data')
 #    ParseRedshiftOutput('/home/jpbreuer/Chandra_data/a2256/specfile_output/results_sn100_smooth100/')
 #    MakeMaps('./regions-info-spex.data',binmap)
